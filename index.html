@@ -222,7 +222,7 @@
                 ctx.beginPath(); ctx.moveTo(300, 300); ctx.arc(300, 300, 290, i * sliceAngle, (i+1) * sliceAngle);
                 ctx.fillStyle = sliceColors[i]; ctx.fill();
                 ctx.save(); ctx.translate(300, 300); ctx.rotate(i * sliceAngle + sliceAngle / 2);
-                ctx.textAlign = "right"; ctx.fillStyle = "black"; ctx.font = "bold 28px sans-serif";
+                ctx.textAlign = "right"; ctx.fillStyle = "black"; ctx.font = "bold 40px sans-serif";
                 let t = categories[i];
                 if (t.includes(" - ")) {
                     let p = t.split(" - "); ctx.fillText(p[0]+" -", 250, -10); ctx.fillText(p[1], 250, 35);
