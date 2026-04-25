@@ -238,10 +238,10 @@
     currentRotation += (360 * 5) + stopAngle - (currentRotation % 360);
     canvas.style.transform = `rotate(${currentRotation}deg)`;
     
-    // Wait 7.5 seconds (4s spin + 3.5s pause) before showing the popup
+    // Wait 6.5 seconds (4s spin + 2.5s pause) before showing the popup
     setTimeout(() => { 
         document.getElementById('modeModal').style.display = 'flex';
-    }, 7500); 
+    }, 6500); 
 }
 
 
