@@ -1,1 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Karaoke Roulette</title>
+    <style>
+        :root {
+            --spotify-green: #1DB954;
+            --spotify-black: #121212;
+            --spotify-dark: #282828;
+            --text-main: #FFFFFF;
+        }
 
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            text-align: center;
+            background-color: var(--spotify-black);
+            color: var(--text-main);
+            margin: 0;
+            padding: env(safe-area-inset-top) 10px 10px 10px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        /* --- INTRO ANIMATION --- */
+        #intro-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: #000; z-index: 1000; display: flex; flex-direction: column;
+            justify-content: center; align-items: center; overflow: hidden;
+            transition: opacity 1s ease;
+        }
+        .intro-row {
+            display: flex; white-space: nowrap; margin: 10px 0;
+            transform: translateX(100%);
+            animation: scrollIn 2s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #row-2 { animation-delay: 0.5s; }
+        .block-letter {
+            font-size: 12vw; font-weight: 900; display: inline-block;
+            margin: 0 2px; padding: 5px 10px;
+            animation: bounceUpDown 0.6s infinite alternate ease-in-out;
+        }
+        @keyframes scrollIn { to { transform: translateX(0); } }
+        @keyframes bounceUpDown { from { transform: translateY(0); } to { transform: translateY(-30px); } }
+
+        /* --- GAME UI --- */
+        #game-content { display: none; flex-direction: column; height: 100%; }
+        h1 { color: var(--spotify-green); font-size: 1.1em; margin: 5px 0; }
+        
+        .score-board {
+            display: flex; justify-content: space-around; background: var(--spotify-dark);
+            padding: 10px; border-radius: 12px; margin-bottom: 5px; border: 1px solid #444;
+        }
+        .score-display { flex: 1; transition: all 0.3s; }
+        .active-team { border-bottom: 3px solid var(--spotify-green); background: rgba(29, 185, 84, 0.1); border-radius: 8px 8px 0 0; }
+        .score-num { font-size: 1.4em; color: var(--spotify-green); font-weight: 800; display: block;}
+
+        .controls-row { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 5px; }
+        #timer { font-size: 42px; font-weight: 800; background: #333; padding: 8px 15px; border-radius: 12px; min-width: 140px; }
+        
+        #mode-display {
+            font-size: 1.2em; font-weight: 700; color: #3498db; 
+            margin: 5px 0; min-height: 1.2em; text-transform: uppercase;
+        }
+
+        #selection-banner {
+            font-size: 1.8em; font-weight: 900; color: #FFFFFF;
+            background: rgba(29, 185, 84, 0.2); padding: 5px 0; margin: 10px 0;
+            text-transform: uppercase; border-top: 1px solid #444; border-bottom: 1px solid #444;
+            min-height: 1.2em;
+        }
+
+        #wheel-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; }
+        #wheel-container { position: relative; width: 75vw; height: 75vw; max-width: 300px; max-height: 300px; }
+        #wheel-canvas { width: 100%; height: 100%; border-radius: 50%; border: 4px solid white; transition: transform 4s cubic-bezier(0.1, 0.7, 0.2, 1); }
+        #pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-top: 35px solid white; z-index: 10; }
+
+        .btn-main { padding:15px 30px; border-radius:12px; border:none; font-weight:900; cursor: pointer; text-transform: uppercase; }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.96); z-index: 500; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .modal-content { background: var(--spotify-dark); padding: 25px; border-radius: 25px; width: 85%; border: 1px solid #444; }
+        .modal button { margin: 10px 0; width: 100%; padding: 20px; font-weight: bold; border-radius: 12px; border: none; font-size: 1.1em; cursor: pointer;}
+
+        /* --- FINALE --- */
+        #winner-screen {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; z-index: 2000; flex-direction: column;
+            justify-content: center; align-items: center; overflow: hidden;
+        }
+        .scroll-container { width: 100%; overflow: hidden; white-space: nowrap; margin-bottom: 20px; }
+        .scrolling-text { display: inline-block; animation: scrollText 10s linear infinite; }
+        .congrats-block { font-size: 10vw; font-weight: 900; margin: 0 10px; }
+        @keyframes scrollText { from { transform: translateX(100%); } to { transform: translateX(-100%); } }
+        #winner-name { font-size: 5em; color: var(--spotify-green); font-weight: 900; text-align: center; }
+    </style>
+</head>
+<body>
+
+    <div id="intro-overlay">
+        <div id="row-1" class="intro-row"></div>
+        <div id="row-2" class="intro-row"></div>
+    </div>
+
+    <div id="game-content">
+        <h1 id="current-team-banner">TEAM 1 TURN</h1>
+        <div id="round-indicator" style="font-size: 0.8em; color: #888;">Round 1 of 5</div>
+        <div class="score-board">
+            <div id="t1-box" class="score-display active-team">
+                <span id="t1-name" class="team-label">Team 1</span>
+                <span id="s1" class="score-num">0</span>
+            </div>
+            <div id="t2-box" class="score-display">
+                <span id="t2-name" class="team-label">Team 2</span>
+                <span id="s2" class="score-num">0</span>
+            </div>
+        </div>
+
+        <div class="controls-row">
+            <div id="timer">02:25</div>
+            <button onclick="spinWheel()" id="spinBtn" class="btn-main" style="background:var(--spotify-green); color:white;">SPIN WHEEL</button>
+            <button onclick="earlyStop()" id="stopBtn" class="btn-main" style="background:#e74c3c; color:white; display:none;">STOP</button>
+        </div>
+
+        <div id="mode-display"></div>
+        <div id="selection-banner">SPIN TO START</div>
+
+        <div id="wheel-area">
+            <div id="wheel-container">
+                <div id="pointer"></div>
+                <canvas id="wheel-canvas" width="600" height="600"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="modeModal" class="modal">
+        <div class="modal-content">
+            <h2 id="mode-team-name" style="color:white;">Select Mode</h2>
+            <button onclick="setMode('spin')" style="background:var(--spotify-green); color:white;">LET’S KARAOKE</button>
+            <button onclick="setMode('guess')" style="background:#3498db; color:white;">NAME THAT SONG/ARTIST</button>
+        </div>
+    </div>
+
+    <div id="spinScoreModal" class="modal">
+        <div class="modal-content">
+            <h2 style="color:white;">Did they sing?</h2>
+            <button onclick="recordScore(100)" style="background:var(--spotify-green); color:white;">YES (100)</button>
+            <button onclick="recordScore(25)" style="background:#f1c40f; color:black;">OTHER (25)</button>
+            <button onclick="recordScore(0)" style="background:#e74c3c; color:white;">NO (0)</button>
+        </div>
+    </div>
+
+    <div id="guessScoreModal" class="modal">
+        <div class="modal-content">
+            <h2 style="color:white;">What did they guess?</h2>
+            <button onclick="recordScore(50)" style="background:var(--spotify-green); color:white;">BOTH (50)</button>
+            <button onclick="recordScore(15)" style="background:#3498db; color:white;">ARTIST ONLY (15)</button>
+            <button onclick="recordScore(10)" style="background:#9b59b6; color:white;">SONG ONLY (10)</button>
+            <button onclick="recordScore(0)" style="background:#e74c3c; color:white;">NONE (0)</button>
+        </div>
+    </div>
+
+    <div id="winner-screen">
+        <div class="scroll-container">
+            <div class="scrolling-text" id="congrats-text"></div>
+        </div>
+        <div style="font-size: 3em; color: white;">YOU WON</div>
+        <div id="winner-name"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <script>
+        const categories = ["1950s - 1970s", "1980s", "1990s", "2000s", "2010s", "2020s", "Host’s Choice"];
+        const sliceColors = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4'];
+        let team1Name, team2Name, currentTeam = 1, score1 = 0, score2 = 0, turnCount = 0, currentMode = '';
+        let countdownInterval, currentRotation = 0;
+        const canvas = document.getElementById('wheel-canvas'), ctx = canvas.getContext('2d');
+
+        window.onload = function() {
+            createLetters("KARAOKE", "row-1", 0);
+            createLetters("ROULETTE", "row-2", 3);
+            setTimeout(() => {
+                document.getElementById('intro-overlay').style.opacity = '0';
+                setTimeout(() => { document.getElementById('intro-overlay').style.display = 'none'; setupTeams(); }, 1000);
+            }, 4500);
+        };
+
+        function createLetters(text, rowId, offset) {
+            const container = document.getElementById(rowId);
+            text.split('').forEach((char, i) => {
+                const span = document.createElement('span'); span.className = 'block-letter'; span.innerText = char;
+                span.style.color = sliceColors[(i + offset) % sliceColors.length];
+                span.style.animationDelay = (i * 0.1) + 's'; container.appendChild(span);
+            });
+        }
+
+        function setupTeams() {
+            team1Name = prompt("Team 1 Name:", "Team 1") || "Team 1";
+            team2Name = prompt("Team 2 Name:", "Team 2") || "Team 2";
+            document.getElementById('t1-name').innerText = team1Name;
+            document.getElementById('t2-name').innerText = team2Name;
+            updateTurnBanner();
+            document.getElementById('game-content').style.display = 'flex';
+            drawWheel();
+        }
+
+        function updateTurnBanner() {
+            const name = currentTeam === 1 ? team1Name : team2Name;
+            document.getElementById('current-team-banner').innerText = `${name.toUpperCase()}'S TURN`;
+        }
+
+        function drawWheel() {
+            const numSlices = categories.length, sliceAngle = (2 * Math.PI) / numSlices;
+            ctx.clearRect(0, 0, 600, 600);
+            for (let i = 0; i < numSlices; i++) {
+                ctx.beginPath(); ctx.moveTo(300, 300);
+                ctx.arc(300, 300, 290, i * sliceAngle, (i+1) * sliceAngle);
+                ctx.fillStyle = sliceColors[i]; ctx.fill();
+                ctx.save(); ctx.translate(300, 300); ctx.rotate(i * sliceAngle + sliceAngle / 2);
+                ctx.textAlign = "right"; ctx.fillStyle = "black"; ctx.font = "bold 32px sans-serif";
+                let text = categories[i];
+                if (text.includes(" - ")) {
+                    let p = text.split(" - "); ctx.fillText(p[0] + " -", 250, -10); ctx.fillText(p[1], 250, 35);
+                } else if (text.includes(" ")) {
+                    let p = text.split(" "); ctx.fillText(p[0], 250, -10); ctx.fillText(p[1], 250, 35);
+                } else { ctx.fillText(text, 250, 10); }
+                ctx.restore();
+            }
+        }
+
+        function spinWheel() {
+            document.getElementById('spinBtn').style.display = 'none';
+            document.getElementById('mode-display').innerText = "";
+            const prizeIndex = Math.floor(Math.random() * categories.length);
+            const degreePerSlice = 360 / categories.length;
+            const stopAngle = 360 - (prizeIndex * degreePerSlice) - (degreePerSlice / 2);
+            currentRotation += (360 * 5) + stopAngle - (currentRotation % 360);
+            canvas.style.transform = `rotate(${currentRotation}deg)`;
+            
+            setTimeout(() => { 
+                document.getElementById('selection-banner').innerText = categories[prizeIndex];
+                document.getElementById('mode-team-name').innerText = (currentTeam === 1 ? team1Name : team2Name) + ": Pick Mode";
+                document.getElementById('modeModal').style.display = 'flex';
+            }, 4000); 
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            document.getElementById('modeModal').style.display = 'none';
+            document.getElementById('mode-display').innerText = mode === 'spin' ? "LET'S KARAOKE" : "NAME THAT SONG/ARTIST";
+            document.getElementById('stopBtn').style.display = 'inline-block';
+            startTimer();
+        }
+
+        function startTimer() {
+            let time = 145;
+            clearInterval(countdownInterval);
+            countdownInterval = setInterval(() => {
+                time--;
+                let m = Math.floor(time/60), s = time%60;
+                document.getElementById('timer').innerText = `0${m}:${s<10?'0':''}${s}`;
+                if (time <= 0) triggerPopup();
+            }, 1000);
+        }
+
+        function earlyStop() { triggerPopup(); }
+
+        function triggerPopup() {
+            clearInterval(countdownInterval);
+            if(currentMode === 'spin') document.getElementById('spinScoreModal').style.display = 'flex';
+            else document.getElementById('guessScoreModal').style.display = 'flex';
+        }
+
+        function recordScore(pts) {
+            if (currentTeam === 1) { score1 += pts; document.getElementById('s1').innerText = score1; currentTeam = 2; }
+            else { score2 += pts; document.getElementById('s2').innerText = score2; currentTeam = 1; }
+            turnCount++;
+            document.querySelectorAll('.modal').forEach(m => m.style.display = 'none');
+            document.getElementById('timer').innerText = "02:25";
+            document.getElementById('stopBtn').style.display = 'none';
+            document.getElementById('spinBtn').style.display = 'inline-block';
+            document.getElementById('selection-banner').innerText = "SPIN TO START";
+            document.getElementById('mode-display').innerText = "";
+            document.getElementById('t1-box').classList.toggle('active-team');
+            document.getElementById('t2-box').classList.toggle('active-team');
+            if (turnCount >= 10) endGame();
+            else {
+                document.getElementById('round-indicator').innerText = `Round ${Math.floor(turnCount/2)+1} of 5`;
+                updateTurnBanner();
+            }
+        }
+
+        function endGame() {
+            let winName = score1 > score2 ? team1Name : (score2 > score1 ? team2Name : "IT'S A TIE!");
+            document.getElementById('game-content').style.display = 'none';
+            document.getElementById('winner-screen').style.display = 'flex';
+            document.getElementById('winner-name').innerText = winName;
+
+            const container = document.getElementById('congrats-text');
+            for(let i=0; i<30; i++) {
+                const span = document.createElement('span');
+                span.className = 'congrats-block';
+                span.innerText = "CONGRATULATIONS";
+                span.style.color = sliceColors[i % sliceColors.length];
+                container.appendChild(span);
+            }
+
+            const end = Date.now() + 15000;
+            (function frame() {
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0, y: 0.8 } });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1, y: 0.8 } });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+    </script>
+</body>
+</html>
