@@ -63,25 +63,25 @@
         .controls-row { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 2px; }
         #timer { font-size: 42px; font-weight: 800; background: #333; padding: 8px 15px; border-radius: 12px; min-width: 140px; }
         
-        /* REDUCED MARGIN TO PULL WHEEL UP */
+        /* GAP REMOVAL: Minimal margins and height */
         #mode-display { 
             font-size: 1.8em; 
             font-weight: 900; 
             color: #3498db; 
-            margin: 5px 0; 
-            min-height: 1.2em; 
+            margin: 2px 0; 
+            min-height: 1.1em; 
             text-transform: uppercase;
-            z-index: 5;
         }
 
         #wheel-area { 
-            flex-grow: 2; /* Increased flex-grow to push it into available space */
+            flex-grow: 10; /* Force this area to expand and take all remaining space */
             display: flex; 
             justify-content: center; 
-            align-items: flex-start; /* Align to top of its container */
-            position: relative; 
+            align-items: flex-start; /* Pulls wheel up to the top of this container */
+            position: relative;
+            margin-top: -5px; /* Tiny nudge upward */
         }
-        #wheel-container { position: relative; width: 78vw; height: 78vw; max-width: 320px; max-height: 320px; }
+        #wheel-container { position: relative; width: 85vw; height: 85vw; max-width: 400px; max-height: 400px; }
         #wheel-canvas { width: 100%; height: 100%; border-radius: 50%; border: 4px solid white; transition: transform 4s cubic-bezier(0.1, 0.7, 0.2, 1); }
         #pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-top: 35px solid white; z-index: 10; }
 
@@ -90,7 +90,6 @@
         .modal-content { background: var(--spotify-dark); padding: 25px; border-radius: 25px; width: 85%; border: 1px solid #444; }
         .modal button { margin: 10px 0; width: 100%; padding: 20px; font-weight: bold; border-radius: 12px; border: none; font-size: 1.1em; cursor: pointer;}
 
-        /* --- FINALE SEQUENCE --- */
         #winner-screen {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 9999; flex-direction: column;
@@ -103,10 +102,7 @@
             display: inline-block; 
             animation: slowScroll 25s linear infinite; 
         }
-        @keyframes slowScroll {
-            from { transform: translateX(0); }
-            to { transform: translateX(-50%); } 
-        }
+        @keyframes slowScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
         .congrats-letter {
             font-size: 12vw; font-weight: 900; display: inline-block;
             animation: bounceUpDown 0.6s infinite alternate ease-in-out;
@@ -143,7 +139,7 @@
         <div id="wheel-area">
             <div id="wheel-container">
                 <div id="pointer"></div>
-                <canvas id="wheel-canvas" width="600" height="600"></canvas>
+                <canvas id="wheel-canvas" width="800" height="800"></canvas>
             </div>
         </div>
     </div>
@@ -225,18 +221,20 @@
 
         function drawWheel() {
             const numSlices = categories.length, sliceAngle = (2 * Math.PI) / numSlices;
-            ctx.clearRect(0, 0, 600, 600);
+            const center = 400; // Updated for 800x800 canvas
+            ctx.clearRect(0, 0, 800, 800);
             for (let i = 0; i < numSlices; i++) {
-                ctx.beginPath(); ctx.moveTo(300, 300); ctx.arc(300, 300, 290, i * sliceAngle, (i+1) * sliceAngle);
+                ctx.beginPath(); ctx.moveTo(center, center); ctx.arc(center, center, 390, i * sliceAngle, (i+1) * sliceAngle);
                 ctx.fillStyle = sliceColors[i]; ctx.fill();
-                ctx.save(); ctx.translate(300, 300); ctx.rotate(i * sliceAngle + sliceAngle / 2);
-                ctx.textAlign = "right"; ctx.fillStyle = "black"; ctx.font = "bold 50px sans-serif";
+                ctx.save(); ctx.translate(center, center); ctx.rotate(i * sliceAngle + sliceAngle / 2);
+                ctx.textAlign = "right"; ctx.fillStyle = "black"; 
+                ctx.font = "bold 50px sans-serif"; // CATEGORY FONT SIZE UPDATED TO 50PX
                 let t = categories[i];
                 if (t.includes(" - ")) {
-                    let p = t.split(" - "); ctx.fillText(p[0]+" -", 250, -10); ctx.fillText(p[1], 250, 35);
+                    let p = t.split(" - "); ctx.fillText(p[0]+" -", 360, -20); ctx.fillText(p[1], 360, 50);
                 } else if (t.includes(" ")) {
-                    let p = t.split(" "); ctx.fillText(p[0], 250, -10); ctx.fillText(p[1], 250, 35);
-                } else { ctx.fillText(t, 250, 10); }
+                    let p = t.split(" "); ctx.fillText(p[0], 360, -20); ctx.fillText(p[1], 360, 50);
+                } else { ctx.fillText(t, 360, 15); }
                 ctx.restore();
             }
         }
@@ -249,7 +247,6 @@
             currentRotation += (360 * 5) + stopAngle - (currentRotation % 360);
             canvas.style.transform = `rotate(${currentRotation}deg)`;
             
-            // 4s spin + 5s wait = 9000ms
             setTimeout(() => { 
                 document.getElementById('modeModal').style.display = 'flex';
             }, 9000); 
