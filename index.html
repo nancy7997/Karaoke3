@@ -241,18 +241,15 @@
             currentRotation += (360 * 5) + stopAngle - (currentRotation % 360);
             canvas.style.transform = `rotate(${currentRotation}deg)`;
             
-            // Wheel stops after 4 seconds
+            // Wait for spin to end (4s)
             setTimeout(() => { 
-                let preTimer = 20;
+                document.getElementById('mode-display').innerText = "WHEEL STOPPED!";
                 document.getElementById('mode-display').style.color = "#f1c40f";
-                let preInterval = setInterval(() => {
-                    document.getElementById('mode-display').innerText = `CHOOSE MODE IN: ${preTimer}`;
-                    preTimer--;
-                    if (preTimer < 0) {
-                        clearInterval(preInterval);
-                        document.getElementById('modeModal').style.display = 'flex';
-                    }
-                }, 1000);
+                
+                // Silent 20-second pause for reading
+                setTimeout(() => {
+                    document.getElementById('modeModal').style.display = 'flex';
+                }, 20000); 
             }, 4000); 
         }
 
