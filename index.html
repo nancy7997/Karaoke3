@@ -21,14 +21,14 @@
             background-color: var(--spotify-black);
             color: var(--text-main);
             margin: 0;
-            padding: env(safe-area-inset-top) 10px 10px 10px;
+            padding: env(safe-area-inset-top) 5px 5px 5px;
             height: 100vh;
             display: flex;
             flex-direction: column;
             overflow: hidden;
         }
 
-        /* --- INTRO SEQUENCE --- */
+        /* --- INTRO --- */
         #intro-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 1000; display: flex; flex-direction: column;
@@ -48,32 +48,39 @@
         @keyframes scrollIn { to { transform: translateX(0); } }
         @keyframes bounceUpDown { from { transform: translateY(0); } to { transform: translateY(-30px); } }
 
-        /* --- GAME UI --- */
+        /* --- GAME UI CLEANED --- */
         #game-content { display: none; flex-direction: column; height: 100%; }
-        h1 { color: var(--spotify-green); font-size: 1.1em; margin: 5px 0; }
         
+        #current-team-banner { 
+            color: var(--spotify-green); 
+            font-size: 1.5em; 
+            font-weight: 900; 
+            margin: 10px 0; 
+            text-transform: uppercase;
+        }
+
         .score-board {
             display: flex; justify-content: space-around; background: var(--spotify-dark);
-            padding: 10px; border-radius: 12px; margin-bottom: 5px; border: 1px solid #444;
+            padding: 10px; border-radius: 12px; margin-bottom: 10px; border: 1px solid #444;
         }
         .score-display { flex: 1; transition: all 0.3s; }
         .active-team { border-bottom: 3px solid var(--spotify-green); background: rgba(29, 185, 84, 0.1); border-radius: 8px 8px 0 0; }
-        .score-num { font-size: 1.4em; color: var(--spotify-green); font-weight: 800; display: block;}
+        .score-num { font-size: 1.6em; color: var(--spotify-green); font-weight: 800; display: block;}
 
         .controls-row { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 5px; }
         #timer { font-size: 42px; font-weight: 800; background: #333; padding: 8px 15px; border-radius: 12px; min-width: 140px; }
         
+        /* Minimalist Mode Display (only shows when active) */
         #mode-display { 
             font-size: 1.8em; 
             font-weight: 900; 
-            color: #3498db; 
-            margin: 20px 0; 
+            margin: 15px 0; 
             min-height: 1.2em; 
             text-transform: uppercase;
         }
 
         #wheel-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; }
-        #wheel-container { position: relative; width: 75vw; height: 75vw; max-width: 300px; max-height: 300px; }
+        #wheel-container { position: relative; width: 80vw; height: 80vw; max-width: 350px; max-height: 350px; }
         #wheel-canvas { width: 100%; height: 100%; border-radius: 50%; border: 4px solid white; transition: transform 4s cubic-bezier(0.1, 0.7, 0.2, 1); }
         #pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-top: 35px solid white; z-index: 10; }
 
@@ -82,7 +89,7 @@
         .modal-content { background: var(--spotify-dark); padding: 25px; border-radius: 25px; width: 85%; border: 1px solid #444; }
         .modal button { margin: 10px 0; width: 100%; padding: 20px; font-weight: bold; border-radius: 12px; border: none; font-size: 1.1em; cursor: pointer;}
 
-        /* --- FINALE SEQUENCE --- */
+        /* --- FINALE --- */
         #winner-screen {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 9999; flex-direction: column;
@@ -117,8 +124,8 @@
     </div>
 
     <div id="game-content">
-        <h1 id="current-team-banner">TEAM 1 TURN</h1>
-        <div id="round-indicator" style="font-size: 0.8em; color: #888;">Round 1 of 5</div>
+        <div id="current-team-banner">TEAM 1 TURN</div>
+        
         <div class="score-board">
             <div id="t1-box" class="score-display active-team"><span id="t1-name">T1</span><span id="s1" class="score-num">0</span></div>
             <div id="t2-box" class="score-display"><span id="t2-name">T2</span><span id="s2" class="score-num">0</span></div>
@@ -130,7 +137,7 @@
             <button onclick="earlyStop()" id="stopBtn" class="btn-main" style="background:#e74c3c; color:white; display:none;">STOP</button>
         </div>
 
-        <div id="mode-display">SPIN TO START</div>
+        <div id="mode-display"></div>
 
         <div id="wheel-area">
             <div id="wheel-container">
@@ -142,7 +149,7 @@
 
     <div id="modeModal" class="modal">
         <div class="modal-content">
-            <h2 id="mode-team-name" style="color:white;">Select Mode</h2>
+            <h2 style="color:white;">Select Mode</h2>
             <button onclick="setMode('KARAOKE')" style="background:var(--spotify-green); color:white;">LET’S KARAOKE</button>
             <button onclick="setMode('NAME THAT SONG/ARTIST')" style="background:#3498db; color:white;">NAME THAT SONG/ARTIST</button>
         </div>
@@ -235,18 +242,14 @@
 
         function spinWheel() {
             document.getElementById('spinBtn').style.display = 'none';
-            document.getElementById('mode-display').innerText = "SPINNING...";
+            document.getElementById('mode-display').innerText = ""; 
             const prizeIndex = Math.floor(Math.random() * categories.length);
             const stopAngle = 360 - (prizeIndex * (360/categories.length)) - (180/categories.length);
             currentRotation += (360 * 5) + stopAngle - (currentRotation % 360);
             canvas.style.transform = `rotate(${currentRotation}deg)`;
             
-            // Wait for spin to end (4s)
+            // Wait for spin (4s) + Pause (20s)
             setTimeout(() => { 
-                document.getElementById('mode-display').innerText = "WHEEL STOPPED!";
-                document.getElementById('mode-display').style.color = "#f1c40f";
-                
-                // Silent 20-second pause for reading
                 setTimeout(() => {
                     document.getElementById('modeModal').style.display = 'flex';
                 }, 20000); 
@@ -288,15 +291,11 @@
             document.getElementById('timer').innerText = "02:25";
             document.getElementById('stopBtn').style.display = 'none';
             document.getElementById('spinBtn').style.display = 'inline-block';
-            document.getElementById('mode-display').innerText = "SPIN TO START";
-            document.getElementById('mode-display').style.color = "#3498db";
+            document.getElementById('mode-display').innerText = "";
             document.getElementById('t1-box').classList.toggle('active-team');
             document.getElementById('t2-box').classList.toggle('active-team');
             if (turnCount >= 10) endGame();
-            else {
-                document.getElementById('round-indicator').innerText = `Round ${Math.floor(turnCount/2)+1} of 5`;
-                updateTurnBanner();
-            }
+            else { updateTurnBanner(); }
         }
 
         function endGame() {
