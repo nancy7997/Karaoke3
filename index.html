@@ -63,7 +63,6 @@
         .controls-row { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 5px; }
         #timer { font-size: 42px; font-weight: 800; background: #333; padding: 8px 15px; border-radius: 12px; min-width: 140px; }
         
-        /* THIS IS THE ONLY FIELD BETWEEN BUTTONS AND WHEEL */
         #mode-display { 
             font-size: 1.8em; 
             font-weight: 900; 
@@ -241,6 +240,8 @@
             const stopAngle = 360 - (prizeIndex * (360/categories.length)) - (180/categories.length);
             currentRotation += (360 * 5) + stopAngle - (currentRotation % 360);
             canvas.style.transform = `rotate(${currentRotation}deg)`;
+            
+            // Immediate transition after 4 second spin
             setTimeout(() => { 
                 document.getElementById('modeModal').style.display = 'flex';
             }, 4000); 
@@ -300,7 +301,6 @@
 
             const container = document.getElementById('final-scroll-text');
             const word = "CONGRATULATIONS     ";
-            // Build text wall for loop
             for(let k=0; k<12; k++) {
                 word.split('').forEach((char, i) => {
                     const span = document.createElement('span');
@@ -312,7 +312,6 @@
                 });
             }
 
-            // 4-Corner Cannon
             const end = Date.now() + 15000;
             (function frame() {
                 confetti({ particleCount: 3, angle: 315, spread: 70, origin: { x: 0, y: 0 } });
