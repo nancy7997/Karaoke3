@@ -234,18 +234,19 @@
         }
 
         function spinWheel() {
-            document.getElementById('spinBtn').style.display = 'none';
-            document.getElementById('mode-display').innerText = "SPINNING...";
-            const prizeIndex = Math.floor(Math.random() * categories.length);
-            const stopAngle = 360 - (prizeIndex * (360/categories.length)) - (180/categories.length);
-            currentRotation += (360 * 5) + stopAngle - (currentRotation % 360);
-            canvas.style.transform = `rotate(${currentRotation}deg)`;
-            
-            // Immediate transition after 4 second spin
-            setTimeout(() => { 
-                document.getElementById('modeModal').style.display = 'flex';
-            }, 4000); 
-        }
+    document.getElementById('spinBtn').style.display = 'none';
+    document.getElementById('mode-display').innerText = "SPINNING...";
+    const prizeIndex = Math.floor(Math.random() * categories.length);
+    const stopAngle = 360 - (prizeIndex * (360/categories.length)) - (180/categories.length);
+    currentRotation += (360 * 5) + stopAngle - (currentRotation % 360);
+    canvas.style.transform = `rotate(${currentRotation}deg)`;
+    
+    // 4s (spin duration) + 5s (wait time) = 9000ms
+    setTimeout(() => { 
+        document.getElementById('modeModal').style.display = 'flex';
+    }, 9000); 
+}
+
 
         function setMode(m) {
             activeMode = m; 
