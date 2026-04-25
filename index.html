@@ -28,7 +28,7 @@
             overflow: hidden;
         }
 
-        /* --- INTRO --- */
+        /* --- INTRO SEQUENCE --- */
         #intro-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 1000; display: flex; flex-direction: column;
@@ -51,6 +51,7 @@
         /* --- GAME UI --- */
         #game-content { display: none; flex-direction: column; height: 100%; }
         h1 { color: var(--spotify-green); font-size: 1.1em; margin: 5px 0; }
+        
         .score-board {
             display: flex; justify-content: space-around; background: var(--spotify-dark);
             padding: 10px; border-radius: 12px; margin-bottom: 5px; border: 1px solid #444;
@@ -59,21 +60,17 @@
         .active-team { border-bottom: 3px solid var(--spotify-green); background: rgba(29, 185, 84, 0.1); border-radius: 8px 8px 0 0; }
         .score-num { font-size: 1.4em; color: var(--spotify-green); font-weight: 800; display: block;}
 
-        .controls-row { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 10px; }
+        .controls-row { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 5px; }
         #timer { font-size: 42px; font-weight: 800; background: #333; padding: 8px 15px; border-radius: 12px; min-width: 140px; }
         
-        /* ONLY FIELD BETWEEN CLOCK AND WHEEL */
+        /* THIS IS THE ONLY FIELD BETWEEN BUTTONS AND WHEEL */
         #mode-display { 
-            font-size: 2em; 
+            font-size: 1.8em; 
             font-weight: 900; 
-            color: #FFFFFF; 
-            margin: 15px 0; 
+            color: #3498db; 
+            margin: 20px 0; 
             min-height: 1.2em; 
             text-transform: uppercase;
-            background: rgba(255,255,255,0.05);
-            padding: 10px 0;
-            border-top: 1px solid #333;
-            border-bottom: 1px solid #333;
         }
 
         #wheel-area { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; }
@@ -86,7 +83,7 @@
         .modal-content { background: var(--spotify-dark); padding: 25px; border-radius: 25px; width: 85%; border: 1px solid #444; }
         .modal button { margin: 10px 0; width: 100%; padding: 20px; font-weight: bold; border-radius: 12px; border: none; font-size: 1.1em; cursor: pointer;}
 
-        /* --- FINALE --- */
+        /* --- FINALE SEQUENCE --- */
         #winner-screen {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 9999; flex-direction: column;
@@ -146,9 +143,9 @@
 
     <div id="modeModal" class="modal">
         <div class="modal-content">
-            <h2 id="mode-team-name" style="color:white;">Pick Mode</h2>
+            <h2 id="mode-team-name" style="color:white;">Select Mode</h2>
             <button onclick="setMode('KARAOKE')" style="background:var(--spotify-green); color:white;">LET’S KARAOKE</button>
-            <button onclick="setMode('NAME THAT SONG')" style="background:#3498db; color:white;">NAME THAT SONG/ARTIST</button>
+            <button onclick="setMode('NAME THAT SONG/ARTIST')" style="background:#3498db; color:white;">NAME THAT SONG/ARTIST</button>
         </div>
     </div>
 
@@ -163,7 +160,7 @@
 
     <div id="guessScoreModal" class="modal">
         <div class="modal-content">
-            <h2 style="color:white;">What did they guess?</h2>
+            <h2 style="color:white;">Result?</h2>
             <button onclick="recordScore(50)" style="background:var(--spotify-green); color:white;">BOTH (50)</button>
             <button onclick="recordScore(15)" style="background:#3498db; color:white;">ARTIST ONLY (15)</button>
             <button onclick="recordScore(10)" style="background:#9b59b6; color:white;">SONG ONLY (10)</button>
@@ -253,6 +250,7 @@
             activeMode = m; 
             document.getElementById('modeModal').style.display = 'none';
             document.getElementById('mode-display').innerText = m;
+            document.getElementById('mode-display').style.color = m === 'KARAOKE' ? '#1DB954' : '#3498db';
             document.getElementById('stopBtn').style.display = 'inline-block';
             startTimer();
         }
@@ -284,6 +282,7 @@
             document.getElementById('stopBtn').style.display = 'none';
             document.getElementById('spinBtn').style.display = 'inline-block';
             document.getElementById('mode-display').innerText = "SPIN TO START";
+            document.getElementById('mode-display').style.color = "#3498db";
             document.getElementById('t1-box').classList.toggle('active-team');
             document.getElementById('t2-box').classList.toggle('active-team');
             if (turnCount >= 10) endGame();
@@ -301,6 +300,7 @@
 
             const container = document.getElementById('final-scroll-text');
             const word = "CONGRATULATIONS     ";
+            // Build text wall for loop
             for(let k=0; k<12; k++) {
                 word.split('').forEach((char, i) => {
                     const span = document.createElement('span');
@@ -312,12 +312,13 @@
                 });
             }
 
+            // 4-Corner Cannon
             const end = Date.now() + 15000;
             (function frame() {
-                confetti({ particleCount: 3, angle: 315, spread: 65, origin: { x: 0, y: 0 } });
-                confetti({ particleCount: 3, angle: 225, spread: 65, origin: { x: 1, y: 0 } });
-                confetti({ particleCount: 3, angle: 45, spread: 65, origin: { x: 0, y: 1 } });
-                confetti({ particleCount: 3, angle: 135, spread: 65, origin: { x: 1, y: 1 } });
+                confetti({ particleCount: 3, angle: 315, spread: 70, origin: { x: 0, y: 0 } });
+                confetti({ particleCount: 3, angle: 225, spread: 70, origin: { x: 1, y: 0 } });
+                confetti({ particleCount: 3, angle: 45, spread: 70, origin: { x: 0, y: 1 } });
+                confetti({ particleCount: 3, angle: 135, spread: 70, origin: { x: 1, y: 1 } });
                 if (Date.now() < end) requestAnimationFrame(frame);
             }());
         }
