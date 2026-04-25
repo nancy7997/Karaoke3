@@ -226,17 +226,24 @@
         }
 
         function spinWheel() {
-            document.getElementById('spinBtn').style.display = 'none';
-            document.getElementById('mode-display').innerText = "SPINNING...";
-            const prizeIndex = Math.floor(Math.random() * categories.length);
-            const stopAngle = 360 - (prizeIndex * (360/categories.length)) - (180/categories.length);
-            currentRotation += (360 * 5) + stopAngle - (currentRotation % 360);
-            canvas.style.transform = `rotate(${currentRotation}deg)`;
-            
-            setTimeout(() => { 
-                document.getElementById('modeModal').style.display = 'flex';
-            }, 9000); 
-        }
+    // Hide the spin button
+    document.getElementById('spinBtn').style.display = 'none';
+    
+    // Clear the text so "SPINNING..." does not appear
+    document.getElementById('mode-display').innerText = ""; 
+
+    const prizeIndex = Math.floor(Math.random() * categories.length);
+    const stopAngle = 360 - (prizeIndex * (360/categories.length)) - (180/categories.length);
+    
+    currentRotation += (360 * 5) + stopAngle - (currentRotation % 360);
+    canvas.style.transform = `rotate(${currentRotation}deg)`;
+    
+    // Wait 9 seconds (4s spin + 5s pause) before showing the popup
+    setTimeout(() => { 
+        document.getElementById('modeModal').style.display = 'flex';
+    }, 9000); 
+}
+
 
         function setMode(m) {
             activeMode = m; 
