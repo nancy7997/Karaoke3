@@ -6,6 +6,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <title>Karaoke Roulette</title>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
             --spotify-green: #1DB954;
@@ -27,12 +28,11 @@
             overflow: hidden;
         }
 
-        /* --- INTRO ANIMATION --- */
+        /* --- INTRO --- */
         #intro-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: #000; z-index: 1000; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; overflow: hidden;
-            transition: opacity 1s ease;
+            justify-content: center; align-items: center; transition: opacity 1s ease;
         }
         .intro-row {
             display: flex; white-space: nowrap; margin: 10px 0;
@@ -51,7 +51,6 @@
         /* --- GAME UI --- */
         #game-content { display: none; flex-direction: column; height: 100%; }
         h1 { color: var(--spotify-green); font-size: 1.1em; margin: 5px 0; }
-        
         .score-board {
             display: flex; justify-content: space-around; background: var(--spotify-dark);
             padding: 10px; border-radius: 12px; margin-bottom: 5px; border: 1px solid #444;
@@ -62,7 +61,6 @@
 
         .controls-row { display: flex; align-items: center; justify-content: center; gap: 15px; margin-bottom: 5px; }
         #timer { font-size: 42px; font-weight: 800; background: #333; padding: 8px 15px; border-radius: 12px; min-width: 140px; }
-        
         #mode-display { font-size: 1.2em; font-weight: 700; color: #3498db; margin: 5px 0; min-height: 1.2em; text-transform: uppercase; }
         #selection-banner { font-size: 1.8em; font-weight: 900; color: #FFFFFF; background: rgba(29, 185, 84, 0.2); padding: 5px 0; margin: 10px 0; text-transform: uppercase; border-top: 1px solid #444; border-bottom: 1px solid #444; min-height: 1.2em; }
 
@@ -72,38 +70,35 @@
         #pointer { position: absolute; top: -15px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 18px solid transparent; border-right: 18px solid transparent; border-top: 35px solid white; z-index: 10; }
 
         .btn-main { padding:15px 30px; border-radius:12px; border:none; font-weight:900; cursor: pointer; text-transform: uppercase; }
-
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); z-index: 500; flex-direction: column; justify-content: center; align-items: center; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.96); z-index: 2000; flex-direction: column; justify-content: center; align-items: center; }
         .modal-content { background: var(--spotify-dark); padding: 25px; border-radius: 25px; width: 85%; border: 1px solid #444; }
         .modal button { margin: 10px 0; width: 100%; padding: 20px; font-weight: bold; border-radius: 12px; border: none; font-size: 1.1em; cursor: pointer;}
 
-        /* --- FINALE --- */
+        /* --- FIXED SLOW FINALE --- */
         #winner-screen {
             display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: black; z-index: 2000; flex-direction: column;
+            background: #000; z-index: 9999; flex-direction: column;
             justify-content: center; align-items: center; overflow: hidden;
         }
         .scroll-container { 
-            position: absolute; top: 15%; width: 100%; 
-            overflow: hidden; white-space: nowrap; 
+            position: absolute; top: 12%; width: 100%; overflow: hidden; white-space: nowrap; 
         }
         .scrolling-text { 
             display: inline-block; 
-            animation: finalScroll 15s linear infinite; 
+            animation: slowScroll 25s linear infinite; 
         }
-        @keyframes finalScroll {
-            from { transform: translateX(100%); }
-            to { transform: translateX(-100%); }
+        @keyframes slowScroll {
+            from { transform: translateX(0); }
+            to { transform: translateX(-50%); } /* Halfway point for infinite loop */
         }
         .congrats-letter {
-            font-size: 10vw; font-weight: 900; display: inline-block;
+            font-size: 12vw; font-weight: 900; display: inline-block;
             animation: bounceUpDown 0.6s infinite alternate ease-in-out;
-            margin: 0 2px;
+            margin: 0 5px;
         }
-
-        #winner-box { z-index: 2001; text-align: center; }
-        #you-won-title { font-size: 3em; color: white; margin-bottom: 0px; font-weight: 300; }
-        #winner-name { font-size: 6em; color: var(--spotify-green); font-weight: 900; text-transform: uppercase; line-height: 1; }
+        #winner-box { z-index: 10001; text-align: center; pointer-events: none; }
+        #you-won-title { font-size: 3em; color: white; font-weight: 300; margin: 0; }
+        #winner-name { font-size: 6em; color: var(--spotify-green); font-weight: 900; text-transform: uppercase; line-height: 1; margin: 0; }
     </style>
 </head>
 <body>
@@ -117,71 +112,31 @@
         <h1 id="current-team-banner">TEAM 1 TURN</h1>
         <div id="round-indicator" style="font-size: 0.8em; color: #888;">Round 1 of 5</div>
         <div class="score-board">
-            <div id="t1-box" class="score-display active-team">
-                <span id="t1-name" class="team-label">Team 1</span>
-                <span id="s1" class="score-num">0</span>
-            </div>
-            <div id="t2-box" class="score-display">
-                <span id="t2-name" class="team-label">Team 2</span>
-                <span id="s2" class="score-num">0</span>
-            </div>
+            <div id="t1-box" class="score-display active-team"><span id="t1-name">T1</span><span id="s1" class="score-num">0</span></div>
+            <div id="t2-box" class="score-display"><span id="t2-name">T2</span><span id="s2" class="score-num">0</span></div>
         </div>
-
         <div class="controls-row">
             <div id="timer">02:25</div>
             <button onclick="spinWheel()" id="spinBtn" class="btn-main" style="background:var(--spotify-green); color:white;">SPIN WHEEL</button>
             <button onclick="earlyStop()" id="stopBtn" class="btn-main" style="background:#e74c3c; color:white; display:none;">STOP</button>
         </div>
-
         <div id="mode-display"></div>
         <div id="selection-banner">SPIN TO START</div>
-
-        <div id="wheel-area">
-            <div id="wheel-container">
-                <div id="pointer"></div>
-                <canvas id="wheel-canvas" width="600" height="600"></canvas>
-            </div>
-        </div>
+        <div id="wheel-area"><div id="wheel-container"><div id="pointer"></div><canvas id="wheel-canvas" width="600" height="600"></canvas></div></div>
     </div>
 
-    <div id="modeModal" class="modal">
-        <div class="modal-content">
-            <h2 id="mode-team-name" style="color:white;">Select Mode</h2>
-            <button onclick="setMode('spin')" style="background:var(--spotify-green); color:white;">LET’S KARAOKE</button>
-            <button onclick="setMode('guess')" style="background:#3498db; color:white;">NAME THAT SONG/ARTIST</button>
-        </div>
-    </div>
-
-    <div id="spinScoreModal" class="modal">
-        <div class="modal-content">
-            <h2 style="color:white;">Did they sing?</h2>
-            <button onclick="recordScore(100)" style="background:var(--spotify-green); color:white;">YES (100)</button>
-            <button onclick="recordScore(25)" style="background:#f1c40f; color:black;">OTHER (25)</button>
-            <button onclick="recordScore(0)" style="background:#e74c3c; color:white;">NO (0)</button>
-        </div>
-    </div>
-
-    <div id="guessScoreModal" class="modal">
-        <div class="modal-content">
-            <h2 style="color:white;">What did they guess?</h2>
-            <button onclick="recordScore(50)" style="background:var(--spotify-green); color:white;">BOTH (50)</button>
-            <button onclick="recordScore(15)" style="background:#3498db; color:white;">ARTIST ONLY (15)</button>
-            <button onclick="recordScore(10)" style="background:#9b59b6; color:white;">SONG ONLY (10)</button>
-            <button onclick="recordScore(0)" style="background:#e74c3c; color:white;">NONE (0)</button>
-        </div>
-    </div>
+    <div id="modeModal" class="modal"><div class="modal-content"><h2 id="mode-team-name" style="color:white;">Pick Mode</h2><button onclick="setMode('spin')" style="background:var(--spotify-green); color:white;">LET’S KARAOKE</button><button onclick="setMode('guess')" style="background:#3498db; color:white;">NAME THAT SONG/ARTIST</button></div></div>
+    <div id="spinScoreModal" class="modal"><div class="modal-content"><h2 style="color:white;">Did they sing?</h2><button onclick="recordScore(100)" style="background:var(--spotify-green); color:white;">YES (100)</button><button onclick="recordScore(25)" style="background:#f1c40f; color:black;">OTHER (25)</button><button onclick="recordScore(0)" style="background:#e74c3c; color:white;">NO (0)</button></div></div>
+    <div id="guessScoreModal" class="modal"><div class="modal-content"><h2 style="color:white;">What did they guess?</h2><button onclick="recordScore(50)" style="background:var(--spotify-green); color:white;">BOTH (50)</button><button onclick="recordScore(15)" style="background:#3498db; color:white;">ARTIST ONLY (15)</button><button onclick="recordScore(10)" style="background:#9b59b6; color:white;">SONG ONLY (10)</button><button onclick="recordScore(0)" style="background:#e74c3c; color:white;">NONE (0)</button></div></div>
 
     <div id="winner-screen">
-        <div class="scroll-container">
-            <div class="scrolling-text" id="final-scroll-text"></div>
-        </div>
+        <div class="scroll-container"><div class="scrolling-text" id="final-scroll-text"></div></div>
         <div id="winner-box">
-            <div id="you-won-title">YOU WON</div>
-            <div id="winner-name"></div>
+            <p id="you-won-title">YOU WON</p>
+            <h2 id="winner-name">TEAM NAME</h2>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script>
         const categories = ["1950s - 1970s", "1980s", "1990s", "2000s", "2010s", "2020s", "Host’s Choice"];
         const sliceColors = ['#e6194B', '#3cb44b', '#ffe119', '#4363d8', '#f58231', '#911eb4', '#42d4f4'];
@@ -194,10 +149,7 @@
             createLetters("ROULETTE", "row-2", 3);
             setTimeout(() => {
                 document.getElementById('intro-overlay').style.opacity = '0';
-                setTimeout(() => { 
-                    document.getElementById('intro-overlay').style.display = 'none'; 
-                    setupTeams(); 
-                }, 1000);
+                setTimeout(() => { document.getElementById('intro-overlay').style.display = 'none'; setupTeams(); }, 1000);
             }, 4500);
         };
 
@@ -229,61 +181,51 @@
             const numSlices = categories.length, sliceAngle = (2 * Math.PI) / numSlices;
             ctx.clearRect(0, 0, 600, 600);
             for (let i = 0; i < numSlices; i++) {
-                ctx.beginPath(); ctx.moveTo(300, 300);
-                ctx.arc(300, 300, 290, i * sliceAngle, (i+1) * sliceAngle);
+                ctx.beginPath(); ctx.moveTo(300, 300); ctx.arc(300, 300, 290, i * sliceAngle, (i+1) * sliceAngle);
                 ctx.fillStyle = sliceColors[i]; ctx.fill();
                 ctx.save(); ctx.translate(300, 300); ctx.rotate(i * sliceAngle + sliceAngle / 2);
                 ctx.textAlign = "right"; ctx.fillStyle = "black"; ctx.font = "bold 28px sans-serif";
-                let text = categories[i];
-                if (text.includes(" - ")) {
-                    let p = text.split(" - "); ctx.fillText(p[0] + " -", 250, -10); ctx.fillText(p[1], 250, 35);
-                } else if (text.includes(" ")) {
-                    let p = text.split(" "); ctx.fillText(p[0], 250, -10); ctx.fillText(p[1], 250, 35);
-                } else { ctx.fillText(text, 250, 10); }
+                let t = categories[i];
+                if (t.includes(" - ")) {
+                    let p = t.split(" - "); ctx.fillText(p[0]+" -", 250, -10); ctx.fillText(p[1], 250, 35);
+                } else if (t.includes(" ")) {
+                    let p = t.split(" "); ctx.fillText(p[0], 250, -10); ctx.fillText(p[1], 250, 35);
+                } else { ctx.fillText(t, 250, 10); }
                 ctx.restore();
             }
         }
 
         function spinWheel() {
             document.getElementById('spinBtn').style.display = 'none';
-            document.getElementById('mode-display').innerText = "";
             const prizeIndex = Math.floor(Math.random() * categories.length);
-            const degreePerSlice = 360 / categories.length;
-            const stopAngle = 360 - (prizeIndex * degreePerSlice) - (degreePerSlice / 2);
+            const stopAngle = 360 - (prizeIndex * (360/categories.length)) - (180/categories.length);
             currentRotation += (360 * 5) + stopAngle - (currentRotation % 360);
             canvas.style.transform = `rotate(${currentRotation}deg)`;
-            
             setTimeout(() => { 
                 document.getElementById('selection-banner').innerText = categories[prizeIndex];
                 document.getElementById('modeModal').style.display = 'flex';
             }, 4000); 
         }
 
-        function setMode(mode) {
-            currentMode = mode;
-            document.getElementById('modeModal').style.display = 'none';
-            document.getElementById('mode-display').innerText = mode === 'spin' ? "LET'S KARAOKE" : "NAME THAT SONG/ARTIST";
+        function setMode(m) {
+            currentMode = m; document.getElementById('modeModal').style.display = 'none';
+            document.getElementById('mode-display').innerText = m === 'spin' ? "LET'S KARAOKE" : "NAME THAT SONG/ARTIST";
             document.getElementById('stopBtn').style.display = 'inline-block';
             startTimer();
         }
 
         function startTimer() {
-            let time = 145;
-            clearInterval(countdownInterval);
+            let time = 145; clearInterval(countdownInterval);
             countdownInterval = setInterval(() => {
-                time--;
-                let m = Math.floor(time/60), s = time%60;
+                time--; let m = Math.floor(time/60), s = time%60;
                 document.getElementById('timer').innerText = `0${m}:${s<10?'0':''}${s}`;
                 if (time <= 0) triggerPopup();
             }, 1000);
         }
 
-        function earlyStop() { triggerPopup(); }
-
         function triggerPopup() {
             clearInterval(countdownInterval);
-            if(currentMode === 'spin') document.getElementById('spinScoreModal').style.display = 'flex';
-            else document.getElementById('guessScoreModal').style.display = 'flex';
+            document.getElementById(currentMode === 'spin' ? 'spinScoreModal' : 'guessScoreModal').style.display = 'flex';
         }
 
         function recordScore(pts) {
@@ -294,7 +236,6 @@
             document.getElementById('timer').innerText = "02:25";
             document.getElementById('stopBtn').style.display = 'none';
             document.getElementById('spinBtn').style.display = 'inline-block';
-            document.getElementById('selection-banner').innerText = "SPIN TO START";
             document.getElementById('mode-display').innerText = "";
             document.getElementById('t1-box').classList.toggle('active-team');
             document.getElementById('t2-box').classList.toggle('active-team');
@@ -306,47 +247,37 @@
         }
 
         function endGame() {
-            let winName = score1 > score2 ? team1Name : (score2 > score1 ? team2Name : "IT'S A TIE!");
+            let win = score1 > score2 ? team1Name : (score2 > score1 ? team2Name : "TIE!");
             document.getElementById('game-content').style.display = 'none';
             document.getElementById('winner-screen').style.display = 'flex';
-            document.getElementById('winner-name').innerText = winName;
+            document.getElementById('winner-name').innerText = win;
 
-            // Generate Bouncing Congratulations Letters
             const container = document.getElementById('final-scroll-text');
-            const congratsStr = "CONGRATULATIONS   ";
-            for(let k=0; k<6; k++) {
-                congratsStr.split('').forEach((char, i) => {
+            const word = "CONGRATULATIONS     ";
+            // Build a very long string of letters for the loop
+            for(let k=0; k<12; k++) {
+                word.split('').forEach((char, i) => {
                     const span = document.createElement('span');
                     span.className = 'congrats-letter';
                     span.innerText = char === " " ? "\u00A0" : char;
-                    span.style.color = sliceColors[(i + k) % sliceColors.length];
+                    span.style.color = sliceColors[(i+k) % sliceColors.length];
                     span.style.animationDelay = (i * 0.1) + 's';
                     container.appendChild(span);
                 });
             }
 
-            // 4-CORNER CONTINUOUS CONFETTI
-            const duration = 30 * 1000;
-            const animationEnd = Date.now() + duration;
-
+            // Continuous Confetti Cannons from all 4 corners
+            const end = Date.now() + 15000;
             (function frame() {
-                const timeLeft = animationEnd - Date.now();
-                if (timeLeft <= 0) return;
-
-                const particleCount = 2;
-                
-                // Top Left
-                confetti({ particleCount, angle: 315, spread: 55, origin: { x: 0, y: 0 } });
-                // Top Right
-                confetti({ particleCount, angle: 225, spread: 55, origin: { x: 1, y: 0 } });
-                // Bottom Left
-                confetti({ particleCount, angle: 45, spread: 55, origin: { x: 0, y: 1 } });
-                // Bottom Right
-                confetti({ particleCount, angle: 135, spread: 55, origin: { x: 1, y: 1 } });
-
-                requestAnimationFrame(frame);
+                confetti({ particleCount: 3, angle: 315, spread: 65, origin: { x: 0, y: 0 } });
+                confetti({ particleCount: 3, angle: 225, spread: 65, origin: { x: 1, y: 0 } });
+                confetti({ particleCount: 3, angle: 45, spread: 65, origin: { x: 0, y: 1 } });
+                confetti({ particleCount: 3, angle: 135, spread: 65, origin: { x: 1, y: 1 } });
+                if (Date.now() < end) requestAnimationFrame(frame);
             }());
         }
+        
+        function earlyStop() { triggerPopup(); }
     </script>
 </body>
 </html>
